@@ -99,7 +99,7 @@ function GenerateRules() {
                 for domestic_dns_task in "${!domestic_dns[@]}"; do
                     echo "${domestic_dns[$domestic_dns_task]}" >> "${file_path}"
                 done
-            elif [ "${generate_file}" == "white" ]; then
+            elif [ "${generate_file}" == "white" ] || [ "${generate_file}" == "white_private" ]; then
                 for foreign_dns_task in "${!foreign_dns[@]}"; do
                     echo "${foreign_dns[$foreign_dns_task]}" >> "${file_path}"
                 done
