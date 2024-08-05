@@ -448,6 +448,8 @@ function OutputData() {
     software_name="adguardhome_new" && generate_file="blackwhite" && generate_mode="lite" && dns_mode="domestic" && GenerateRules
     software_name="adguardhome_new" && generate_file="whiteblack" && generate_mode="full" && dns_mode="foreign" && GenerateRules
     software_name="adguardhome_new" && generate_file="whiteblack" && generate_mode="lite" && dns_mode="foreign" && GenerateRules
+    cp whitelist_full_combine.txt whitelist_full_combine_home.txt
+    sed -i 's|https://1.12.12.12/dns-query|192.168.123.1|g; s|https://223.5.5.5/dns-query|192.168.123.1|g' whitelist_full_combine_home.txt
     cd .. && rm -rf ./Temp
     exit 0
 }
