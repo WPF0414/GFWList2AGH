@@ -129,7 +129,7 @@ function GenerateRules() {
                         for cnacc_data_task in "${!cnacc_data[@]}"; do
                             echo -n "${cnacc_data[$cnacc_data_task]}/" >> "${file_path}"
                         done
-                    elif [ "${generate_file}" == "white" ] || [ "${generate_file}" == "whiteblack" ]; then
+                    elif [ "${generate_file}" == "white" ] || [ "${generate_file}" == "whiteblack" ] || [ "${generate_file}" == "white_private" ]; then
                         for gfwlist_data_task in "${!gfwlist_data[@]}"; do
                             echo -n "${gfwlist_data[$gfwlist_data_task]}/" >> "${file_path}"
                         done
