@@ -65,7 +65,7 @@ function GenerateRules() {
             generate_temp="black"
         elif [ "${generate_file}" == "white" ] || [ "${generate_file}" == "blackwhite" ]; then
             generate_temp="white"
-        elif [ "${generate_file}" == "white" ] || [ "${generate_file}" == "white_private" ]; then
+        elif [ "${generate_file}" == "white_private" ]; then
             generate_temp="white_private"
         else
             generate_temp="debug"
@@ -167,6 +167,8 @@ function GenerateRules() {
             elif [ "${dns_mode}" == "domestic" ]; then
                 FileName && GenerateDefaultUpstream && GenerateRulesProcess
             elif [ "${dns_mode}" == "foreign" ]; then
+                FileName && GenerateDefaultUpstream && GenerateRulesProcess
+            elif [ "${dns_mode}" == "private" ]; then
                 FileName && GenerateDefaultUpstream && GenerateRulesProcess
             fi
         ;;
