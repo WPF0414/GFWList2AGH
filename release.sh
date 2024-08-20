@@ -362,21 +362,21 @@ function GenerateRules() {
             if [ "${generate_mode}" == "full" ]; then
                 if [ "${generate_file}" == "black" ]; then
                     FileName && for gfwlist_data_task in "${!gfwlist_data[@]}"; do
-                        echo "nameserver /${gfwlist_data[$gfwlist_data_task]}/${foreign_group:-foreign}" >> "${file_path}"
+                        echo "${gfwlist_data[$gfwlist_data_task]}" >> "${file_path}"
                     done
                 elif [ "${generate_file}" == "white" ]; then
                     FileName && for cnacc_data_task in "${!cnacc_data[@]}"; do
-                        echo "nameserver /${cnacc_data[$cnacc_data_task]}/${domestic_group:-domestic}" >> "${file_path}"
+                        echo "${cnacc_data[$cnacc_data_task]}" >> "${file_path}"
                     done
                 fi
             elif [ "${generate_mode}" == "lite" ]; then
                 if [ "${generate_file}" == "black" ]; then
                     FileName && for lite_gfwlist_data_task in "${!lite_gfwlist_data[@]}"; do
-                        echo "nameserver /${lite_gfwlist_data[$lite_gfwlist_data_task]}/${foreign_group:-foreign}" >> "${file_path}"
+                        echo "${lite_gfwlist_data[$lite_gfwlist_data_task]}" >> "${file_path}"
                     done
                 elif [ "${generate_file}" == "white" ]; then
                     FileName && for lite_cnacc_data_task in "${!lite_cnacc_data[@]}"; do
-                        echo "nameserver /${lite_cnacc_data[$lite_cnacc_data_task]}/${domestic_group:-domestic}" >> "${file_path}"
+                        echo "${lite_cnacc_data[$lite_cnacc_data_task]}" >> "${file_path}"
                     done
                 fi
             fi
