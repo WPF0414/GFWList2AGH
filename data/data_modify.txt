@@ -47,6 +47,10 @@
 
 # (!%@) | 向 C 列表移除域名并将其从 G 列表中添加
 (!%@)example.org
+(!%@)pterclub.com
+(!%@)springsunday.net
+(!%@)hdsky.me
+
 
 # (@&!) | 向 G 列表添加域名并将其从 C 列表中移除
 (@&!)example.org
