@@ -1,9 +1,6 @@
 ## 自定义规则优先级 - 开始
 
 # 移除(!) > 添加(@) > 排除(*)
-(!%@)pterclub.com
-(!%@)springsunday.net
-(!%@)hdsky.me
 
 ## 自定义规则优先级 - 结束
 
@@ -203,5 +200,37 @@
 
 # 治杰 Online
 (@&!)zhijie.online
+
+# PrivateTracke
+(@&!)rousi.zip
+(@&!)www.pttime.org
+(@&!)pthome.net
+(@&!)www.hddolby.com
+(@&!)zhuque.in
+(@&!)audiences.me
+(@&!)hhanclub.top
+(@&!)piggo.me
+(@&!)leaves.red
+(@&!)zmpt.cc
+(@&!)pt.eastgame.org
+(@&!)pt.0ff.cc
+(@&!)u2.dmhy.org
+(@&!)ubits.club
+(@&!)pt.btschool.club
+(@&!)carpt.net
+(@&!)pt.soulvoice.club
+(@&!)www.icc2022.com
+(@&!)hdsky.me
+(@&!)et8.org
+(@&!)hdhome.org
+(@&!)hdfans.org
+(@&!)springsunday.net
+(@&!)pandapt.net
+(@&!)totheglory.im
+(@&!)ptchdbits.co
+(@&!)ourbits.club
+(@&!)pterclub.com
+(@&!)xp.m-team.cc
+(@&!)www.hdkyl.in
 
 ## 自定义规则 - 结束
