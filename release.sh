@@ -141,20 +141,20 @@ function AnalyseData() {
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_subtraction.tmp" "./lite_cnacc_added.tmp" > "./lite_cnacc_data.tmp"
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./gfwlist_subtraction.tmp" "./lite_gfwlist_added.tmp" > "./lite_gfwlist_data.tmp"
     
-    # Remove single domains covered by wildcard (*-a.) patterns
-    # Process cnacc_data.tmp: Extract wildcards and remove matching single domains
+    # Remove single domains covered by wildcard (*-a.) patterns independently for each list
+    # Process cnacc_data.tmp: Extract wildcards and remove matching single domains within cnacc_data
     cat "./cnacc_data.tmp" | grep "^\*-a\." | sed 's/^\*-a\.//g' > "./cnacc_wildcards.tmp"
     cat "./cnacc_data.tmp" | grep -v "^\*-a\." | awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_wildcards.tmp" - | cat - "./cnacc_data.tmp" | grep "^\*-a\." | sort | uniq > "./cnacc_data_filtered.tmp"
     
-    # Process gfwlist_data.tmp: Extract wildcards and remove matching single domains
+    # Process gfwlist_data.tmp: Extract wildcards and remove matching single domains within gfwlist_data
     cat "./gfwlist_data.tmp" | grep "^\*-a\." | sed 's/^\*-a\.//g' > "./gfwlist_wildcards.tmp"
     cat "./gfwlist_data.tmp" | grep -v "^\*-a\." | awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./gfwlist_wildcards.tmp" - | cat - "./gfwlist_data.tmp" | grep "^\*-a\." | sort | uniq > "./gfwlist_data_filtered.tmp"
     
-    # Process lite_cnacc_data.tmp: Extract wildcards and remove matching single domains
+    # Process lite_cnacc_data.tmp: Extract wildcards and remove matching single domains within lite_cnacc_data
     cat "./lite_cnacc_data.tmp" | grep "^\*-a\." | sed 's/^\*-a\.//g' > "./lite_cnacc_wildcards.tmp"
     cat "./lite_cnacc_data.tmp" | grep -v "^\*-a\." | awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./lite_cnacc_wildcards.tmp" - | cat - "./lite_cnacc_data.tmp" | grep "^\*-a\." | sort | uniq > "./lite_cnacc_data_filtered.tmp"
     
-    # Process lite_gfwlist_data.tmp: Extract wildcards and remove matching single domains
+    # Process lite_gfwlist_data.tmp: Extract wildcards and remove matching single domains within lite_gfwlist_data
     cat "./lite_gfwlist_data.tmp" | grep "^\*-a\." | sed 's/^\*-a\.//g' > "./lite_gfwlist_wildcards.tmp"
     cat "./lite_gfwlist_data.tmp" | grep -v "^\*-a\." | awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./lite_gfwlist_wildcards.tmp" - | cat - "./lite_gfwlist_data.tmp" | grep "^\*-a\." | sort | uniq > "./lite_gfwlist_data_filtered.tmp"
     
@@ -164,9 +164,6 @@ function AnalyseData() {
     lite_cnacc_data=($(cat "./lite_cnacc_data_filtered.tmp" | grep -v "^#" | sort | uniq))
     lite_gfwlist_data=($(cat "./lite_gfwlist_data_filtered.tmp" | grep -v "^#" | sort | uniq))
 }
-
-
-
 
 # Generate Rules
 function GenerateRules() {
