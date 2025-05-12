@@ -207,47 +207,93 @@ function GenerateRules() {
     esac
 }
 
+# Process whitelist and blacklist to remove regular domains when wildcard versions exist
+function CleanupWildcardDomains() {
+    echo "Processing whitelist and blacklist to remove regular domains that have wildcard versions..."
+    
+    # Process whitelist_full.conf
+    if [ -f "../gfwlist2smartdns/whitelist_full.conf" ]; then
+        echo "Processing whitelist..."
+        # Use AWK for single-pass processing which is much more efficient for large files
+        awk '
+        BEGIN { removed_count = 0 }
+        # First pass: collect all wildcard domains
+        /^\*-a\./ {
+            # Store the base domain (remove the "*-a." prefix)
+            base_domain = substr($0, 5)
+            wildcards[base_domain] = 1
+            print $0 > "../gfwlist2smartdns/whitelist_full.conf.new"
+            next
+        }
+        # Second pass: handle regular domains
+        {
+            # If this regular domain has a wildcard version, skip it
+            if (wildcards[$0] == 1) {
+                removed_count++
+                next
+            }
+            # Otherwise keep it
+            print $0 > "../gfwlist2smartdns/whitelist_full.conf.new"
+        }
+        END {
+            if (removed_count > 0) {
+                print "Removed " removed_count " regular domains from whitelist that have wildcard versions"
+            }
+        }' "../gfwlist2smartdns/whitelist_full.conf"
+        
+        # Replace the original file with the filtered one
+        mv "../gfwlist2smartdns/whitelist_full.conf.new" "../gfwlist2smartdns/whitelist_full.conf"
+    fi
+    
+    # Process blacklist_full.conf
+    if [ -f "../gfwlist2smartdns/blacklist_full.conf" ]; then
+        echo "Processing blacklist..."
+        # Use AWK for single-pass processing which is much more efficient for large files
+        awk '
+        BEGIN { removed_count = 0 }
+        # First pass: collect all wildcard domains
+        /^\*-a\./ {
+            # Store the base domain (remove the "*-a." prefix)
+            base_domain = substr($0, 5)
+            wildcards[base_domain] = 1
+            print $0 > "../gfwlist2smartdns/blacklist_full.conf.new"
+            next
+        }
+        # Second pass: handle regular domains
+        {
+            # If this regular domain has a wildcard version, skip it
+            if (wildcards[$0] == 1) {
+                removed_count++
+                next
+            }
+            # Otherwise keep it
+            print $0 > "../gfwlist2smartdns/blacklist_full.conf.new"
+        }
+        END {
+            if (removed_count > 0) {
+                print "Removed " removed_count " regular domains from blacklist that have wildcard versions"
+            }
+        }' "../gfwlist2smartdns/blacklist_full.conf"
+        
+        # Replace the original file with the filtered one
+        mv "../gfwlist2smartdns/blacklist_full.conf.new" "../gfwlist2smartdns/blacklist_full.conf"
+    fi
+    
+    echo "Wildcard domain processing completed."
+}
+
 # Output Data with Debug Output
 function OutputData() {
     ## SmartDNS
     software_name="smartdns" && generate_file="black" && generate_mode="full" && foreign_group="foreign" && GenerateRules
     software_name="smartdns" && generate_file="white" && generate_mode="full" && domestic_group="domestic" && GenerateRules
-
-    # Process blacklist_full.conf for *-a.domain logic (simplified)
-    blacklist_file="../gfwlist2smartdns/blacklist_full.conf"
-    if [ -f "${blacklist_file}" ]; then
-        echo "Processing blacklist_full.conf for *-a.domain logic (simplified)..."
-        blacklist_temp="../gfwlist2smartdns/blacklist_full_temp.conf"
-        blacklist_to_remove="../gfwlist2smartdns/blacklist_to_remove.temp"
-        # Extract base domains from lines containing "-a." (e.g., 0.zone from *-a.0.zone)
-        grep "-a\." "${blacklist_file}" | sed 's/.*-a\.//' > "${blacklist_to_remove}"
-        # Remove lines that match the base domains exactly
-        grep -v -F -f "${blacklist_to_remove}" "${blacklist_file}" > "${blacklist_temp}"
-        mv "${blacklist_temp}" "${blacklist_file}"
-        rm -f "${blacklist_to_remove}"
-        echo "Blacklist processing complete."
-    fi
-
-    # Process whitelist_full.conf for *-a.domain logic (simplified)
-    whitelist_file="../gfwlist2smartdns/whitelist_full.conf"
-    if [ -f "${whitelist_file}" ]; then
-        echo "Processing whitelist_full.conf for *-a.domain logic (simplified)..."
-        whitelist_temp="../gfwlist2smartdns/whitelist_full_temp.conf"
-        whitelist_to_remove="../gfwlist2smartdns/whitelist_to_remove.temp"
-        # Extract base domains from lines containing "-a." (e.g., 0.zone from *-a.0.zone)
-        grep "-a\." "${whitelist_file}" | sed 's/.*-a\.//' > "${whitelist_to_remove}"
-        # Remove lines that match the base domains exactly
-        grep -v -F -f "${whitelist_to_remove}" "${whitelist_file}" > "${whitelist_temp}"
-        mv "${whitelist_temp}" "${whitelist_file}"
-        rm -f "${whitelist_to_remove}"
-        echo "Whitelist processing complete."
-    fi
-
+    
+    # Process files to handle wildcard domains
+    CleanupWildcardDomains
+    
     cd .. && rm -rf ./Temp
     exit 0
 }
-
-
 
 ## Process
 # Call GetData
