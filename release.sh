@@ -263,7 +263,6 @@ function OutputData() {
                 base_domain=$(echo "${domain}" | sed 's/.*-a\.//')
                 # Check if the base domain exists in the file
                 if grep -Fx "${base_domain}" "${whitelist_file}" > /dev/null; then
-                    echo "Removing ${base_domain} from whitelist as it is covered by ${domain}"
                     # Skip adding the base domain to the temp file (effectively removing it)
                     grep -Fxv "${base_domain}" "${whitelist_file}" > "${whitelist_temp}"
                     mv "${whitelist_temp}" "${whitelist_file}"
