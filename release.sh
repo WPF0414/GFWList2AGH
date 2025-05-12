@@ -208,10 +208,72 @@ function GenerateRules() {
 }
 
 # Output Data with Debug Output
+# Output Data with Debug Output
 function OutputData() {
     ## SmartDNS
     software_name="smartdns" && generate_file="black" && generate_mode="full" && foreign_group="foreign" && GenerateRules
     software_name="smartdns" && generate_file="white" && generate_mode="full" && domestic_group="domestic" && GenerateRules
+
+    # Process blacklist_full.conf for *-a.domain logic
+    blacklist_file="../gfwlist2smartdns/blacklist_full.conf"
+    if [ -f "${blacklist_file}" ]; then
+        echo "Processing blacklist_full.conf for *-a.domain logic..."
+        # Create a temporary file for processed blacklist
+        blacklist_temp="../gfwlist2smartdns/blacklist_full_temp.conf"
+        > "${blacklist_temp}"
+        # Read the blacklist file line by line
+        while IFS= read -r domain; do
+            # Skip empty lines
+            if [ -z "${domain}" ]; then
+                continue
+            fi
+            # Check if the domain matches *-a.something pattern
+            if [[ "${domain}" == *-a.* ]]; then
+                # Extract the base domain (e.g., 0.zone from *-a.0.zone)
+                base_domain=$(echo "${domain}" | sed 's/.*-a\.//')
+                # Check if the base domain exists in the file
+                if grep -Fx "${base_domain}" "${blacklist_file}" > /dev/null; then
+                    echo "Removing ${base_domain} from blacklist as it is covered by ${domain}"
+                    # Skip adding the base domain to the temp file (effectively removing it)
+                    grep -Fxv "${base_domain}" "${blacklist_file}" > "${blacklist_temp}"
+                    mv "${blacklist_temp}" "${blacklist_file}"
+                fi
+            fi
+        done < "${blacklist_file}"
+        # Remove temporary file if it still exists
+        rm -f "${blacklist_temp}"
+    fi
+
+    # Process whitelist_full.conf for *-a.domain logic
+    whitelist_file="../gfwlist2smartdns/whitelist_full.conf"
+    if [ -f "${whitelist_file}" ]; then
+        echo "Processing whitelist_full.conf for *-a.domain logic..."
+        # Create a temporary file for processed whitelist
+        whitelist_temp="../gfwlist2smartdns/whitelist_full_temp.conf"
+        > "${whitelist_temp}"
+        # Read the whitelist file line by line
+        while IFS= read -r domain; do
+            # Skip empty lines
+            if [ -z "${domain}" ]; then
+                continue
+            fi
+            # Check if the domain matches *-a.something pattern
+            if [[ "${domain}" == *-a.* ]]; then
+                # Extract the base domain (e.g., 0.zone from *-a.0.zone)
+                base_domain=$(echo "${domain}" | sed 's/.*-a\.//')
+                # Check if the base domain exists in the file
+                if grep -Fx "${base_domain}" "${whitelist_file}" > /dev/null; then
+                    echo "Removing ${base_domain} from whitelist as it is covered by ${domain}"
+                    # Skip adding the base domain to the temp file (effectively removing it)
+                    grep -Fxv "${base_domain}" "${whitelist_file}" > "${whitelist_temp}"
+                    mv "${whitelist_temp}" "${whitelist_file}"
+                fi
+            fi
+        done < "${whitelist_file}"
+        # Remove temporary file if it still exists
+        rm -f "${whitelist_temp}"
+    fi
+
     cd .. && rm -rf ./Temp
     exit 0
 }
