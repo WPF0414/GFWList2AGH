@@ -67,7 +67,7 @@ function GetData() {
         curl -s --connect-timeout 15 "${gfwlist2agh_modify[$gfwlist2agh_modify_task]}" >> ./gfwlist2agh_modify.tmp
     done
 }
-# Analyse Data
+
 # Analyse Data
 function AnalyseData() {
     # Create a more inclusive domain regex that handles numeric domains like "0.zone"
@@ -75,7 +75,7 @@ function AnalyseData() {
     lite_domain_regex="^[a-z0-9*\-][a-z0-9\-]{0,61}[a-z0-9](\.[a-z0-9][a-z0-9\-]{0,61}[a-z0-9])+$"
     
     # Pre-process the input files to properly handle DOMAIN and convert DOMAIN-SUFFIX to wildcard pattern
-    # Filter out comments, stats (like DOMAIN: 9), and IP-CIDR related content
+    # Filter out comments first with highest priority
     cat "./cnacc_domain.tmp" | grep -v "^#" | grep -v "DOMAIN:" | grep -v "IP-CIDR:" | grep -v "TOTAL:" | sed -E 's/^DOMAIN-SUFFIX,([^,]+)$/\*-a.\1/g; s/^(DOMAIN|DOMAIN-KEYWORD|URL-REGEX),//g' > "./cnacc_domain_processed.tmp"
     cat "./gfwlist_domain.tmp" | grep -v "^#" | grep -v "DOMAIN:" | grep -v "IP-CIDR:" | grep -v "TOTAL:" | sed -E 's/^DOMAIN-SUFFIX,([^,]+)$/\*-a.\1/g; s/^(DOMAIN|DOMAIN-KEYWORD|URL-REGEX),//g' > "./gfwlist_domain_processed.tmp"
     
@@ -83,39 +83,39 @@ function AnalyseData() {
     cp "./cnacc_domain.tmp" "./debug_original_cnacc_domain.tmp"
     cp "./cnacc_domain_processed.tmp" "./debug_processed_cnacc_domain.tmp"
     
-    # Continue with the standard processing but use the pre-processed files
-    cat "./gfwlist2agh_modify.tmp" | grep -v "\#" | grep "\(\@\%\@\)\|\(\@\%\!\)\|\(\!\&\@\)\|\(\@\@\@\)" | tr -d "\!\%\&\(\)\*\@" | sort | uniq > "./cnacc_addition.tmp"
-    cat "./gfwlist2agh_modify.tmp" | grep -v "\#" | grep "\(\!\%\!\)\|\(\@\&\!\)\|\(\!\%\@\)\|\(\!\!\!\)" | tr -d "\!\%\&\(\)\*\@" | sort | uniq > "./cnacc_subtraction.tmp"
-    cat "./gfwlist2agh_modify.tmp" | grep -v "\#" | grep "\(\*\%\*\)\|\(\*\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./cnacc_exclusion.tmp"
-    cat "./gfwlist2agh_modify.tmp" | grep -v "\#" | grep "\(\*\%\*\)\|\(\*\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./lite_cnacc_exclusion.tmp"
-    cat "./gfwlist2agh_modify.tmp" | grep -v "\#" | grep "\(\!\%\*\)\|\(\!\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./cnacc_keyword.tmp"
-    cat "./gfwlist2agh_modify.tmp" | grep -v "\#" | grep "\(\!\%\*\)\|\(\!\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./lite_cnacc_keyword.tmp"
-    cat "./gfwlist2agh_modify.tmp" | grep -v "\#" | grep "\(\@\&\@\)\|\(\@\&\!\)\|\(\!\%\@\)\|\(\@\@\@\)" | tr -d "\!\%\&\(\)\*\@" | sort | uniq > "./gfwlist_addition.tmp"
-    cat "./gfwlist2agh_modify.tmp" | grep -v "\#" | grep "\(\!\&\!\)\|\(\@\%\!\)\|\(\!\&\@\)\|\(\!\!\!\)" | tr -d "\!\%\&\(\)\*\@" | sort | uniq > "./gfwlist_subtraction.tmp"
-    cat "./gfwlist2agh_modify.tmp" | grep -v "\#" | grep "\(\*\&\*\)\|\(\*\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./gfwlist_exclusion.tmp"
-    cat "./gfwlist2agh_modify.tmp" | grep -v "\#" | grep "\(\*\&\*\)\|\(\*\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./lite_gfwlist_exclusion.tmp"
-    cat "./gfwlist2agh_modify.tmp" | grep -v "\#" | grep "\(\!\&\*\)\|\(\!\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./gfwlist_keyword.tmp"
-    cat "./gfwlist2agh_modify.tmp" | grep -v "\#" | grep "\(\!\&\*\)\|\(\!\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./lite_gfwlist_keyword.tmp"
+    # Continue with the standard processing but prioritize comment filtering
+    cat "./gfwlist2agh_modify.tmp" | grep -v "^#" | grep "\(\@\%\@\)\|\(\@\%\!\)\|\(\!\&\@\)\|\(\@\@\@\)" | tr -d "\!\%\&\(\)\*\@" | sort | uniq > "./cnacc_addition.tmp"
+    cat "./gfwlist2agh_modify.tmp" | grep -v "^#" | grep "\(\!\%\!\)\|\(\@\&\!\)\|\(\!\%\@\)\|\(\!\!\!\)" | tr -d "\!\%\&\(\)\*\@" | sort | uniq > "./cnacc_subtraction.tmp"
+    cat "./gfwlist2agh_modify.tmp" | grep -v "^#" | grep "\(\*\%\*\)\|\(\*\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./cnacc_exclusion.tmp"
+    cat "./gfwlist2agh_modify.tmp" | grep -v "^#" | grep "\(\*\%\*\)\|\(\*\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./lite_cnacc_exclusion.tmp"
+    cat "./gfwlist2agh_modify.tmp" | grep -v "^#" | grep "\(\!\%\*\)\|\(\!\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./cnacc_keyword.tmp"
+    cat "./gfwlist2agh_modify.tmp" | grep -v "^#" | grep "\(\!\%\*\)\|\(\!\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./lite_cnacc_keyword.tmp"
+    cat "./gfwlist2agh_modify.tmp" | grep -v "^#" | grep "\(\@\&\@\)\|\(\@\&\!\)\|\(\!\%\@\)\|\(\@\@\@\)" | tr -d "\!\%\&\(\)\*\@" | sort | uniq > "./gfwlist_addition.tmp"
+    cat "./gfwlist2agh_modify.tmp" | grep -v "^#" | grep "\(\!\&\!\)\|\(\@\%\!\)\|\(\!\&\@\)\|\(\!\!\!\)" | tr -d "\!\%\&\(\)\*\@" | sort | uniq > "./gfwlist_subtraction.tmp"
+    cat "./gfwlist2agh_modify.tmp" | grep -v "^#" | grep "\(\*\&\*\)\|\(\*\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./gfwlist_exclusion.tmp"
+    cat "./gfwlist2agh_modify.tmp" | grep -v "^#" | grep "\(\*\&\*\)\|\(\*\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./lite_gfwlist_exclusion.tmp"
+    cat "./gfwlist2agh_modify.tmp" | grep -v "^#" | grep "\(\!\&\*\)\|\(\!\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./gfwlist_keyword.tmp"
+    cat "./gfwlist2agh_modify.tmp" | grep -v "^#" | grep "\(\!\&\*\)\|\(\!\*\*\)" | tr -d "\!\%\&\(\)\*\@" | xargs | sed "s/\ /\|/g" | sort | uniq > "./lite_gfwlist_keyword.tmp"
     
-    # Extract lite domains (only valid domains)
-    cat "./cnacc_addition.tmp" | grep -E "${lite_domain_regex}" | sort | uniq > "./lite_cnacc_addition.tmp"
-    cat "./gfwlist_addition.tmp" | grep -E "${lite_domain_regex}" | sort | uniq > "./lite_gfwlist_addition.tmp"
+    # Extract lite domains (only valid domains), prioritize comment filtering
+    cat "./cnacc_addition.tmp" | grep -v "^#" | grep -E "${lite_domain_regex}" | sort | uniq > "./lite_cnacc_addition.tmp"
+    cat "./gfwlist_addition.tmp" | grep -v "^#" | grep -E "${lite_domain_regex}" | sort | uniq > "./lite_gfwlist_addition.tmp"
     
-    # Process trusted CNAccelerator domains
-    cat "./cnacc_trusted.tmp" | sed "s/\/114\.114\.114\.114//g;s/server\=\///g" | tr "A-Z" "a-z" > "./cnacc_trust.tmp"
-    cat "./cnacc_trust.tmp" | grep -E "${lite_domain_regex}" | sort | uniq > "./lite_cnacc_trust.tmp"
+    # Process trusted CNAccelerator domains, prioritize comment filtering
+    cat "./cnacc_trusted.tmp" | grep -v "^#" | sed "s/\/114\.114\.114\.114//g;s/server\=\///g" | tr "A-Z" "a-z" > "./cnacc_trust.tmp"
+    cat "./cnacc_trust.tmp" | grep -v "^#" | grep -E "${lite_domain_regex}" | sort | uniq > "./lite_cnacc_trust.tmp"
     
-    # Process main domain lists with more flexible filtering and maintain wildcard patterns
-    cat "./cnacc_domain_processed.tmp" | sed "s/domain\://g;s/full\://g" | tr "A-Z" "a-z" | grep -E "${domain_regex}" > "./cnacc_checklist.tmp"
-    cat "./gfwlist_base64.tmp" "./gfwlist_domain_processed.tmp" | sed "s/domain\://g;s/full\://g;s/http\:\/\///g;s/https\:\/\///g" | tr -d "|" | tr "A-Z" "a-z" | grep -E "${domain_regex}" > "./gfwlist_checklist.tmp"
+    # Process main domain lists with more flexible filtering and maintain wildcard patterns, prioritize comment filtering
+    cat "./cnacc_domain_processed.tmp" | grep -v "^#" | sed "s/domain\://g;s/full\://g" | tr "A-Z" "a-z" | grep -E "${domain_regex}" > "./cnacc_checklist.tmp"
+    cat "./gfwlist_base64.tmp" "./gfwlist_domain_processed.tmp" | grep -v "^#" | sed "s/domain\://g;s/full\://g;s/http\:\/\///g;s/https\:\/\///g" | tr -d "|" | tr "A-Z" "a-z" | grep -E "${domain_regex}" > "./gfwlist_checklist.tmp"
     
     # Save debug copies before domain extraction
     cp "./cnacc_checklist.tmp" "./debug_cnacc_checklist.tmp"
     cp "./gfwlist_checklist.tmp" "./debug_gfwlist_checklist.tmp"
     
-    # Process lite domain lists
-    cat "./cnacc_checklist.tmp" | rev | cut -d "." -f 1,2 | rev | sort | uniq > "./lite_cnacc_checklist.tmp"
-    cat "./gfwlist_checklist.tmp" | rev | cut -d "." -f 1,2 | rev | sort | uniq > "./lite_gfwlist_checklist.tmp"
+    # Process lite domain lists, prioritize comment filtering
+    cat "./cnacc_checklist.tmp" | grep -v "^#" | rev | cut -d "." -f 1,2 | rev | sort | uniq > "./lite_cnacc_checklist.tmp"
+    cat "./gfwlist_checklist.tmp" | grep -v "^#" | rev | cut -d "." -f 1,2 | rev | sort | uniq > "./lite_gfwlist_checklist.tmp"
     
     # Create raw lists with more lenient filtering
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_checklist.tmp" "./gfwlist_checklist.tmp" > "./gfwlist_raw.tmp"
@@ -129,11 +129,11 @@ function AnalyseData() {
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_trust.tmp" "./gfwlist_raw.tmp" > "./gfwlist_raw_new.tmp"
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_trust.tmp" "./lite_gfwlist_raw.tmp" > "./lite_gfwlist_raw_new.tmp"
     
-    # Combine lists
-    cat "./cnacc_raw.tmp" "./lite_cnacc_raw.tmp" "./cnacc_addition.tmp" "./lite_cnacc_addition.tmp" "./cnacc_trust.tmp" "./lite_cnacc_trust.tmp" | sort | uniq > "./cnacc_added.tmp"
-    cat "./gfwlist_raw_new.tmp" "./lite_gfwlist_raw_new.tmp" "./gfwlist_addition.tmp" "./lite_gfwlist_addition.tmp" | sort | uniq > "./gfwlist_added.tmp"
-    cat "./lite_cnacc_raw.tmp" "./lite_cnacc_addition.tmp" "./lite_cnacc_trust.tmp" | sort | uniq > "./lite_cnacc_added.tmp"
-    cat "./lite_gfwlist_raw_new.tmp" "./lite_gfwlist_addition.tmp" | sort | uniq > "./lite_gfwlist_added.tmp"
+    # Combine lists, prioritize comment filtering
+    cat "./cnacc_raw.tmp" "./lite_cnacc_raw.tmp" "./cnacc_addition.tmp" "./lite_cnacc_addition.tmp" "./cnacc_trust.tmp" "./lite_cnacc_trust.tmp" | grep -v "^#" | sort | uniq > "./cnacc_added.tmp"
+    cat "./gfwlist_raw_new.tmp" "./lite_gfwlist_raw_new.tmp" "./gfwlist_addition.tmp" "./lite_gfwlist_addition.tmp" | grep -v "^#" | sort | uniq > "./gfwlist_added.tmp"
+    cat "./lite_cnacc_raw.tmp" "./lite_cnacc_addition.tmp" "./lite_cnacc_trust.tmp" | grep -v "^#" | sort | uniq > "./lite_cnacc_added.tmp"
+    cat "./lite_gfwlist_raw_new.tmp" "./lite_gfwlist_addition.tmp" | grep -v "^#" | sort | uniq > "./lite_gfwlist_added.tmp"
     
     # Apply subtractions
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_subtraction.tmp" "./cnacc_added.tmp" > "./cnacc_data.tmp"
@@ -141,12 +141,13 @@ function AnalyseData() {
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_subtraction.tmp" "./lite_cnacc_added.tmp" > "./lite_cnacc_data.tmp"
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./gfwlist_subtraction.tmp" "./lite_gfwlist_added.tmp" > "./lite_gfwlist_data.tmp"
     
-    # Save final data arrays
-    cnacc_data=($(cat "./cnacc_data.tmp" | sort | uniq))
-    gfwlist_data=($(cat "./gfwlist_data.tmp" | sort | uniq))
-    lite_cnacc_data=($(cat "./lite_cnacc_data.tmp" | sort | uniq))
-    lite_gfwlist_data=($(cat "./lite_gfwlist_data.tmp" | sort | uniq))
+    # Save final data arrays, prioritize comment filtering
+    cnacc_data=($(cat "./cnacc_data.tmp" | grep -v "^#" | sort | uniq))
+    gfwlist_data=($(cat "./gfwlist_data.tmp" | grep -v "^#" | sort | uniq))
+    lite_cnacc_data=($(cat "./lite_cnacc_data.tmp" | grep -v "^#" | sort | uniq))
+    lite_gfwlist_data=($(cat "./lite_gfwlist_data.tmp" | grep -v "^#" | sort | uniq))
 }
+
 
 
 # Generate Rules
