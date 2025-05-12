@@ -233,7 +233,6 @@ function OutputData() {
                 base_domain=$(echo "${domain}" | sed 's/.*-a\.//')
                 # Check if the base domain exists in the file
                 if grep -Fx "${base_domain}" "${blacklist_file}" > /dev/null; then
-                    echo "Removing ${base_domain} from blacklist as it is covered by ${domain}"
                     # Skip adding the base domain to the temp file (effectively removing it)
                     grep -Fxv "${base_domain}" "${blacklist_file}" > "${blacklist_temp}"
                     mv "${blacklist_temp}" "${blacklist_file}"
