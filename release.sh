@@ -89,7 +89,56 @@ function AnalyseData() {
     cat "./gfwlist_domain_no_comments.tmp" | grep -v "^DOMAIN" | grep -v "^IP-CIDR" | sed -E 's/^(URL-REGEX|IP6-CIDR|PROCESS-NAME|USER-AGENT),.*//g' | grep -v "^$" >> "./gfwlist_domain_processed.tmp"
     
     # Debug: Save intermediate processed files
-    cp "./cnacc_domain_no_comments.tmp" "./debug
+    cp "./cnacc_domain_no_comments.tmp" "./debug_cnacc_domain_no_comments.tmp"
+    
+    # Process GFWList from base64 sources
+    if [ -f "./gfwlist_base64.tmp" ]; then
+        cat "./gfwlist_base64.tmp" | grep -v "^!" | grep -v "^$" | grep -v "\[" > "./gfwlist_base64_filtered.tmp"
+    fi
+    
+    # Process trusted China domain lists (dnsmasq format)
+    if [ -f "./cnacc_trusted.tmp" ]; then
+        cat "./cnacc_trusted.tmp" | grep -v "^#" | grep -v "^$" | sed -e 's/^server=\///g' -e 's/\/.*$//g' > "./cnacc_trusted_processed.tmp"
+    fi
+    
+    # Combine all processed domain lists
+    cat ./cnacc_domain_processed.tmp ./cnacc_trusted_processed.tmp 2>/dev/null | sort -u > ./all_cnacc_domains.tmp
+    cat ./gfwlist_domain_processed.tmp ./gfwlist_base64_filtered.tmp 2>/dev/null | sort -u > ./all_gfw_domains.tmp
+    
+    # Apply regex filtering to ensure valid domains only
+    cat ./all_cnacc_domains.tmp | grep -E "$domain_regex" > ./cnacc_data_filtered.tmp
+    cat ./all_gfw_domains.tmp | grep -E "$domain_regex" > ./gfwlist_data_filtered.tmp
+    
+    # Create lite versions with second-level domains only
+    cat ./cnacc_data_filtered.tmp | grep -E "$lite_domain_regex" | sed -e 's/^.*\.\([^.]*\.[^.]*\)$/\1/g' | sort -u > ./lite_cnacc_data.tmp
+    cat ./gfwlist_data_filtered.tmp | grep -E "$lite_domain_regex" | sed -e 's/^.*\.\([^.]*\.[^.]*\)$/\1/g' | sort -u > ./lite_gfwlist_data.tmp
+    
+    # Apply custom modifications
+    if [ -f "./gfwlist2agh_modify.tmp" ]; then
+        cat "./gfwlist2agh_modify.tmp" | grep -v "^#" | grep -v "^$" | while read line; do
+            mode=$(echo $line | cut -d ',' -f1)
+            domain=$(echo $line | cut -d ',' -f2)
+            if [ "$mode" == "add-white" ]; then
+                echo "$domain" >> ./cnacc_data_filtered.tmp
+            elif [ "$mode" == "add-black" ]; then
+                echo "$domain" >> ./gfwlist_data_filtered.tmp
+            elif [ "$mode" == "remove-white" ]; then
+                sed -i "/^$domain$/d" ./cnacc_data_filtered.tmp
+            elif [ "$mode" == "remove-black" ]; then
+                sed -i "/^$domain$/d" ./gfwlist_data_filtered.tmp
+            fi
+        done
+    fi
+    
+    # Generate debug file with any problematic entries
+    cat ./cnacc_domain_processed.tmp ./gfwlist_domain_processed.tmp 2>/dev/null | grep -v -E "$domain_regex" > ./debug_domain_check.txt
+    
+    # Final preparations for generating rules
+    readarray -t cnacc_data < <(cat ./cnacc_data_filtered.tmp | sort -u)
+    readarray -t gfwlist_data < <(cat ./gfwlist_data_filtered.tmp | sort -u)
+    readarray -t lite_cnacc_data < <(cat ./lite_cnacc_data.tmp | sort -u)
+    readarray -t lite_gfwlist_data < <(cat ./lite_gfwlist_data.tmp | sort -u)
+}
 
 # Generate Rules
 function GenerateRules() {
