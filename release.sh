@@ -69,15 +69,16 @@ function GetData() {
 }
 # Analyse Data
 # Analyse Data
+# Analyse Data
 function AnalyseData() {
     # Create a more inclusive domain regex that handles numeric domains like "0.zone"
     domain_regex="^([a-z0-9*\-]([a-z0-9\-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9\-]{0,61}[a-z0-9]$"
     lite_domain_regex="^[a-z0-9*\-][a-z0-9\-]{0,61}[a-z0-9](\.[a-z0-9][a-z0-9\-]{0,61}[a-z0-9])+$"
     
     # Pre-process the input files to properly handle DOMAIN and convert DOMAIN-SUFFIX to wildcard pattern
-    # Filter out comments, stats (like DOMAIN: 9), and IP-CIDR related content
-    cat "./cnacc_domain.tmp" | grep -v "^#" | grep -v "DOMAIN:" | grep -v "IP-CIDR:" | grep -v "TOTAL:" | sed -E 's/^DOMAIN-SUFFIX,([^,]+)$/\*-a.\1/g; s/^(DOMAIN|DOMAIN-KEYWORD|URL-REGEX),//g' > "./cnacc_domain_processed.tmp"
-    cat "./gfwlist_domain.tmp" | grep -v "^#" | grep -v "DOMAIN:" | grep -v "IP-CIDR:" | grep -v "TOTAL:" | sed -E 's/^DOMAIN-SUFFIX,([^,]+)$/\*-a.\1/g; s/^(DOMAIN|DOMAIN-KEYWORD|URL-REGEX),//g' > "./gfwlist_domain_processed.tmp"
+    # Filter out comments, stats (like DOMAIN: 9), IP-CIDR, disabled content, and other irrelevant lines
+    cat "./cnacc_domain.tmp" | grep -v "^#" | grep -v "DOMAIN:" | grep -v "IP-CIDR:" | grep -v "TOTAL:" | grep -v "disabled:" | grep -v "http" | sed -E 's/^DOMAIN-SUFFIX,([^,]+)$/\*-a.\1/g; s/^(DOMAIN|DOMAIN-KEYWORD|URL-REGEX),//g' > "./cnacc_domain_processed.tmp"
+    cat "./gfwlist_domain.tmp" | grep -v "^#" | grep -v "DOMAIN:" | grep -v "IP-CIDR:" | grep -v "TOTAL:" | grep -v "disabled:" | grep -v "http" | sed -E 's/^DOMAIN-SUFFIX,([^,]+)$/\*-a.\1/g; s/^(DOMAIN|DOMAIN-KEYWORD|URL-REGEX),//g' > "./gfwlist_domain_processed.tmp"
     
     # Debug: Save the pre-processed files for inspection
     cp "./cnacc_domain.tmp" "./debug_original_cnacc_domain.tmp"
@@ -136,17 +137,93 @@ function AnalyseData() {
     cat "./lite_gfwlist_raw_new.tmp" "./lite_gfwlist_addition.tmp" | sort | uniq > "./lite_gfwlist_added.tmp"
     
     # Apply subtractions
-    awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_subtraction.tmp" "./cnacc_added.tmp" > "./cnacc_data.tmp"
-    awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./gfwlist_subtraction.tmp" "./gfwlist_added.tmp" > "./gfwlist_data.tmp"
-    awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_subtraction.tmp" "./lite_cnacc_added.tmp" > "./lite_cnacc_data.tmp"
-    awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./gfwlist_subtraction.tmp" "./lite_gfwlist_added.tmp" > "./lite_gfwlist_data.tmp"
+    awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_subtraction.tmp" "./cnacc_added.tmp" > "./cnacc_data_before_wildcard.tmp"
+    awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./gfwlist_subtraction.tmp" "./gfwlist_added.tmp" > "./gfwlist_data_before_wildcard.tmp"
+    awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_subtraction.tmp" "./lite_cnacc_added.tmp" > "./lite_cnacc_data_before_wildcard.tmp"
+    awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./gfwlist_subtraction.tmp" "./lite_gfwlist_added.tmp" > "./lite_gfwlist_data_before_wildcard.tmp"
+    
+    # Handle wildcard domains: Remove specific domains covered by wildcard patterns (e.g., *-a.example.com covers sub.example.com)
+    # Process cnacc data
+    > "./cnacc_data.tmp"
+    cat "./cnacc_data_before_wildcard.tmp" | while IFS= read -r domain; do
+        if [[ "$domain" == *"-a."* ]]; then
+            # Wildcard domain, keep it and remove specific domains covered by it
+            wildcard_suffix=$(echo "$domain" | sed 's/.*-a\.//')
+            grep -v "^[^[:space:]]*\.$wildcard_suffix$" "./cnacc_data_before_wildcard.tmp" > "./cnacc_data_temp.tmp"
+            mv "./cnacc_data_temp.tmp" "./cnacc_data_before_wildcard.tmp"
+            echo "$domain" >> "./cnacc_data.tmp"
+        else
+            # Non-wildcard domain, keep it if not already removed
+            if grep -q "^$domain$" "./cnacc_data_before_wildcard.tmp"; then
+                echo "$domain" >> "./cnacc_data.tmp"
+            fi
+        fi
+    done
+    
+    # Process gfwlist data
+    > "./gfwlist_data.tmp"
+    cat "./gfwlist_data_before_wildcard.tmp" | while IFS= read -r domain; do
+        if [[ "$domain" == *"-a."* ]]; then
+            # Wildcard domain, keep it and remove specific domains covered by it
+            wildcard_suffix=$(echo "$domain" | sed 's/.*-a\.//')
+            grep -v "^[^[:space:]]*\.$wildcard_suffix$" "./gfwlist_data_before_wildcard.tmp" > "./gfwlist_data_temp.tmp"
+            mv "./gfwlist_data_temp.tmp" "./gfwlist_data_before_wildcard.tmp"
+            echo "$domain" >> "./gfwlist_data.tmp"
+        else
+            # Non-wildcard domain, keep it if not already removed
+            if grep -q "^$domain$" "./gfwlist_data_before_wildcard.tmp"; then
+                echo "$domain" >> "./gfwlist_data.tmp"
+            fi
+        fi
+    done
+    
+    # Process lite cnacc data
+    > "./lite_cnacc_data.tmp"
+    cat "./lite_cnacc_data_before_wildcard.tmp" | while IFS= read -r domain; do
+        if [[ "$domain" == *"-a."* ]]; then
+            # Wildcard domain, keep it and remove specific domains covered by it
+            wildcard_suffix=$(echo "$domain" | sed 's/.*-a\.//')
+            grep -v "^[^[:space:]]*\.$wildcard_suffix$" "./lite_cnacc_data_before_wildcard.tmp" > "./lite_cnacc_data_temp.tmp"
+            mv "./lite_cnacc_data_temp.tmp" "./lite_cnacc_data_before_wildcard.tmp"
+            echo "$domain" >> "./lite_cnacc_data.tmp"
+        else
+            # Non-wildcard domain, keep it if not already removed
+            if grep -q "^$domain$" "./lite_cnacc_data_before_wildcard.tmp"; then
+                echo "$domain" >> "./lite_cnacc_data.tmp"
+            fi
+        fi
+    done
+    
+    # Process lite gfwlist data
+    > "./lite_gfwlist_data.tmp"
+    cat "./lite_gfwlist_data_before_wildcard.tmp" | while IFS= read -r domain; do
+        if [[ "$domain" == *"-a."* ]]; then
+            # Wildcard domain, keep it and remove specific domains covered by it
+            wildcard_suffix=$(echo "$domain" | sed 's/.*-a\.//')
+            grep -v "^[^[:space:]]*\.$wildcard_suffix$" "./lite_gfwlist_data_before_wildcard.tmp" > "./lite_gfwlist_data_temp.tmp"
+            mv "./lite_gfwlist_data_temp.tmp" "./lite_gfwlist_data_before_wildcard.tmp"
+            echo "$domain" >> "./lite_gfwlist_data.tmp"
+        else
+            # Non-wildcard domain, keep it if not already removed
+            if grep -q "^$domain$" "./lite_gfwlist_data_before_wildcard.tmp"; then
+                echo "$domain" >> "./lite_gfwlist_data.tmp"
+            fi
+        fi
+    done
     
     # Save final data arrays
     cnacc_data=($(cat "./cnacc_data.tmp" | sort | uniq))
     gfwlist_data=($(cat "./gfwlist_data.tmp" | sort | uniq))
     lite_cnacc_data=($(cat "./lite_cnacc_data.tmp" | sort | uniq))
     lite_gfwlist_data=($(cat "./lite_gfwlist_data.tmp" | sort | uniq))
+    
+    # Create special debug file with specific domains
+    echo "Checking for specific domains:" > "./debug_domain_check.txt"
+    grep -i "0.zone" ./cnacc_domain.tmp ./cnacc_domain_processed.tmp ./cnacc_checklist.tmp ./cnacc_data.tmp >> "./debug_domain_check.txt" || echo "0.zone not found" >> "./debug_domain_check.txt"
+    grep -i "alt1-mtalk.google.com" ./cnacc_domain.tmp ./cnacc_domain_processed.tmp ./cnacc_checklist.tmp ./cnacc_data.tmp >> "./debug_domain_check.txt" || echo "alt1-mtalk.google.com not found" >> "./debug_domain_check.txt"
+    grep -i "gov.cn" ./cnacc_domain.tmp ./cnacc_domain_processed.tmp ./cnacc_checklist.tmp ./cnacc_data.tmp >> "./debug_domain_check.txt" || echo "gov.cn not found" >> "./debug_domain_check.txt"
 }
+
 
 
 # Generate Rules
