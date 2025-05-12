@@ -213,79 +213,40 @@ function OutputData() {
     software_name="smartdns" && generate_file="black" && generate_mode="full" && foreign_group="foreign" && GenerateRules
     software_name="smartdns" && generate_file="white" && generate_mode="full" && domestic_group="domestic" && GenerateRules
 
-    # Process blacklist_full.conf for *-a.domain logic efficiently with awk
+    # Process blacklist_full.conf for *-a.domain logic (simplified)
     blacklist_file="../gfwlist2smartdns/blacklist_full.conf"
     if [ -f "${blacklist_file}" ]; then
-        echo "Processing blacklist_full.conf for *-a.domain logic (optimized)..."
+        echo "Processing blacklist_full.conf for *-a.domain logic (simplified)..."
         blacklist_temp="../gfwlist2smartdns/blacklist_full_temp.conf"
-        awk '
-        {
-            # Store all domains in an array
-            domains[$0] = 1;
-            original_order[NR] = $0;
-            # Check if the line matches *-a.* pattern
-            if ($0 ~ /\*-a\./) {
-                # Extract base domain (e.g., 0.zone from *-a.0.zone)
-                split($0, parts, "-a.");
-                base_domain = parts[2];
-                if (base_domain in domains) {
-                    # Mark the base domain for removal
-                    delete domains[base_domain];
-                    print "Removing " base_domain " from blacklist as it is covered by " $0;
-                }
-            }
-        }
-        END {
-            # Output remaining domains in original order, skipping removed ones
-            for (i = 1; i <= NR; i++) {
-                domain = original_order[i];
-                if (domain in domains) {
-                    print domain;
-                }
-            }
-        }
-        ' "${blacklist_file}" > "${blacklist_temp}"
+        blacklist_to_remove="../gfwlist2smartdns/blacklist_to_remove.temp"
+        # Extract base domains from lines containing "-a." (e.g., 0.zone from *-a.0.zone)
+        grep "-a\." "${blacklist_file}" | sed 's/.*-a\.//' > "${blacklist_to_remove}"
+        # Remove lines that match the base domains exactly
+        grep -v -F -f "${blacklist_to_remove}" "${blacklist_file}" > "${blacklist_temp}"
         mv "${blacklist_temp}" "${blacklist_file}"
+        rm -f "${blacklist_to_remove}"
+        echo "Blacklist processing complete."
     fi
 
-    # Process whitelist_full.conf for *-a.domain logic efficiently with awk
+    # Process whitelist_full.conf for *-a.domain logic (simplified)
     whitelist_file="../gfwlist2smartdns/whitelist_full.conf"
     if [ -f "${whitelist_file}" ]; then
-        echo "Processing whitelist_full.conf for *-a.domain logic (optimized)..."
+        echo "Processing whitelist_full.conf for *-a.domain logic (simplified)..."
         whitelist_temp="../gfwlist2smartdns/whitelist_full_temp.conf"
-        awk '
-        {
-            # Store all domains in an array
-            domains[$0] = 1;
-            original_order[NR] = $0;
-            # Check if the line matches *-a.* pattern
-            if ($0 ~ /\*-a\./) {
-                # Extract base domain (e.g., 0.zone from *-a.0.zone)
-                split($0, parts, "-a.");
-                base_domain = parts[2];
-                if (base_domain in domains) {
-                    # Mark the base domain for removal
-                    delete domains[base_domain];
-                    print "Removing " base_domain " from whitelist as it is covered by " $0;
-                }
-            }
-        }
-        END {
-            # Output remaining domains in original order, skipping removed ones
-            for (i = 1; i <= NR; i++) {
-                domain = original_order[i];
-                if (domain in domains) {
-                    print domain;
-                }
-            }
-        }
-        ' "${whitelist_file}" > "${whitelist_temp}"
+        whitelist_to_remove="../gfwlist2smartdns/whitelist_to_remove.temp"
+        # Extract base domains from lines containing "-a." (e.g., 0.zone from *-a.0.zone)
+        grep "-a\." "${whitelist_file}" | sed 's/.*-a\.//' > "${whitelist_to_remove}"
+        # Remove lines that match the base domains exactly
+        grep -v -F -f "${whitelist_to_remove}" "${whitelist_file}" > "${whitelist_temp}"
         mv "${whitelist_temp}" "${whitelist_file}"
+        rm -f "${whitelist_to_remove}"
+        echo "Whitelist processing complete."
     fi
 
     cd .. && rm -rf ./Temp
     exit 0
 }
+
 
 
 ## Process
