@@ -123,7 +123,7 @@ function AnalyseData() {
     
     # Create lite raw lists
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./lite_cnacc_checklist.tmp" "./lite_gfwlist_checklist.tmp" > "./lite_gfwlist_raw.tmp"
-    awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./lite_gfwlist_checklist.tmp" "./lite_cnacc_raw.tmp" > "./lite_cnacc_raw.tmp"
+    awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./lite_gfwlist_checklist.tmp" "./lite_cnacc_checklist.tmp" > "./lite_cnacc_raw.tmp"
     
     # Process trusted domains
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_trust.tmp" "./gfwlist_raw.tmp" > "./gfwlist_raw_new.tmp"
@@ -140,116 +140,13 @@ function AnalyseData() {
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./gfwlist_subtraction.tmp" "./gfwlist_added.tmp" > "./gfwlist_data.tmp"
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_subtraction.tmp" "./lite_cnacc_added.tmp" > "./lite_cnacc_data.tmp"
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./gfwlist_subtraction.tmp" "./lite_gfwlist_added.tmp" > "./lite_gfwlist_data.tmp"
-
-    # Optimized: Remove duplicates covered by wildcard rules (e.g., *-a.domain covers sub.domain) using awk
-    # Process for cnacc (white list)
-    cat "./cnacc_data.tmp" | grep -v "^#" | sort | uniq > "./cnacc_data_no_dup.tmp"
-    awk '
-    BEGIN { FS = "." }
-    {
-        if ($0 ~ /\*-a\./) {
-            sub(/.*-a\./, "", $0);  # Extract domain after *-a.
-            wildcards[$0] = 1;      # Store wildcard domains
-            print $0;                # Keep wildcard entry
-        } else {
-            full_domain = $0;
-            sub_domain = $0;
-            sub(/^[a-z0-9-]*\./, "", sub_domain);  # Extract domain after first subdomain
-            if (!(sub_domain in wildcards)) {
-                lines[full_domain] = 1;  # Store non-covered domains
-            }
-        }
-    }
-    END {
-        for (line in lines) {
-            print line;
-        }
-    }
-    ' "./cnacc_data_no_dup.tmp" > "./cnacc_data_final.tmp"
-
-    # Process for gfwlist (black list)
-    cat "./gfwlist_data.tmp" | grep -v "^#" | sort | uniq > "./gfwlist_data_no_dup.tmp"
-    awk '
-    BEGIN { FS = "." }
-    {
-        if ($0 ~ /\*-a\./) {
-            sub(/.*-a\./, "", $0);  # Extract domain after *-a.
-            wildcards[$0] = 1;      # Store wildcard domains
-            print $0;                # Keep wildcard entry
-        } else {
-            full_domain = $0;
-            sub_domain = $0;
-            sub(/^[a-z0-9-]*\./, "", sub_domain);  # Extract domain after first subdomain
-            if (!(sub_domain in wildcards)) {
-                lines[full_domain] = 1;  # Store non-covered domains
-            }
-        }
-    }
-    END {
-        for (line in lines) {
-            print line;
-        }
-    }
-    ' "./gfwlist_data_no_dup.tmp" > "./gfwlist_data_final.tmp"
-
-    # Process for lite_cnacc (white list)
-    cat "./lite_cnacc_data.tmp" | grep -v "^#" | sort | uniq > "./lite_cnacc_data_no_dup.tmp"
-    awk '
-    BEGIN { FS = "." }
-    {
-        if ($0 ~ /\*-a\./) {
-            sub(/.*-a\./, "", $0);  # Extract domain after *-a.
-            wildcards[$0] = 1;      # Store wildcard domains
-            print $0;                # Keep wildcard entry
-        } else {
-            full_domain = $0;
-            sub_domain = $0;
-            sub(/^[a-z0-9-]*\./, "", sub_domain);  # Extract domain after first subdomain
-            if (!(sub_domain in wildcards)) {
-                lines[full_domain] = 1;  # Store non-covered domains
-            }
-        }
-    }
-    END {
-        for (line in lines) {
-            print line;
-        }
-    }
-    ' "./lite_cnacc_data_no_dup.tmp" > "./lite_cnacc_data_final.tmp"
-
-    # Process for lite_gfwlist (black list)
-    cat "./lite_gfwlist_data.tmp" | grep -v "^#" | sort | uniq > "./lite_gfwlist_data_no_dup.tmp"
-    awk '
-    BEGIN { FS = "." }
-    {
-        if ($0 ~ /\*-a\./) {
-            sub(/.*-a\./, "", $0);  # Extract domain after *-a.
-            wildcards[$0] = 1;      # Store wildcard domains
-            print $0;                # Keep wildcard entry
-        } else {
-            full_domain = $0;
-            sub_domain = $0;
-            sub(/^[a-z0-9-]*\./, "", sub_domain);  # Extract domain after first subdomain
-            if (!(sub_domain in wildcards)) {
-                lines[full_domain] = 1;  # Store non-covered domains
-            }
-        }
-    }
-    END {
-        for (line in lines) {
-            print line;
-        }
-    }
-    ' "./lite_gfwlist_data_no_dup.tmp" > "./lite_gfwlist_data_final.tmp"
-
+    
     # Save final data arrays, prioritize comment filtering
-    cnacc_data=($(cat "./cnacc_data_final.tmp" | grep -v "^#" | sort | uniq))
-    gfwlist_data=($(cat "./gfwlist_data_final.tmp" | grep -v "^#" | sort | uniq))
-    lite_cnacc_data=($(cat "./lite_cnacc_data_final.tmp" | grep -v "^#" | sort | uniq))
-    lite_gfwlist_data=($(cat "./lite_gfwlist_data_final.tmp" | grep -v "^#" | sort | uniq))
+    cnacc_data=($(cat "./cnacc_data.tmp" | grep -v "^#" | sort | uniq))
+    gfwlist_data=($(cat "./gfwlist_data.tmp" | grep -v "^#" | sort | uniq))
+    lite_cnacc_data=($(cat "./lite_cnacc_data.tmp" | grep -v "^#" | sort | uniq))
+    lite_gfwlist_data=($(cat "./lite_gfwlist_data.tmp" | grep -v "^#" | sort | uniq))
 }
-
-
 
 
 
