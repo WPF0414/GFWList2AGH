@@ -141,28 +141,69 @@ function AnalyseData() {
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_subtraction.tmp" "./lite_cnacc_added.tmp" > "./lite_cnacc_data.tmp"
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./gfwlist_subtraction.tmp" "./lite_gfwlist_added.tmp" > "./lite_gfwlist_data.tmp"
     
+    # Debug: Check content of intermediate files before wildcard filtering
+    echo "Debug: Content count before wildcard filtering"
+    echo "cnacc_data.tmp count: $(wc -l < ./cnacc_data.tmp)"
+    echo "gfwlist_data.tmp count: $(wc -l < ./gfwlist_data.tmp)"
+    echo "lite_cnacc_data.tmp count: $(wc -l < ./lite_cnacc_data.tmp)"
+    echo "lite_gfwlist_data.tmp count: $(wc -l < ./lite_gfwlist_data.tmp)"
+    
     # Remove single domains covered by wildcard (*-a.) patterns independently for each list
     # Process cnacc_data.tmp: Extract wildcards and remove matching single domains within cnacc_data
     cat "./cnacc_data.tmp" | grep "^\*-a\." | sed 's/^\*-a\.//g' > "./cnacc_wildcards.tmp"
-    cat "./cnacc_data.tmp" | grep -v "^\*-a\." | awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_wildcards.tmp" - | cat - "./cnacc_data.tmp" | grep "^\*-a\." | sort | uniq > "./cnacc_data_filtered.tmp"
+    if [ -s "./cnacc_wildcards.tmp" ]; then
+        cat "./cnacc_data.tmp" | grep -v "^\*-a\." | awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_wildcards.tmp" - > "./cnacc_data_non_wildcard_filtered.tmp"
+        cat "./cnacc_data_non_wildcard_filtered.tmp" "./cnacc_data.tmp" | grep "^\*-a\." | sort | uniq > "./cnacc_data_filtered.tmp"
+    else
+        cp "./cnacc_data.tmp" "./cnacc_data_filtered.tmp"
+    fi
     
     # Process gfwlist_data.tmp: Extract wildcards and remove matching single domains within gfwlist_data
     cat "./gfwlist_data.tmp" | grep "^\*-a\." | sed 's/^\*-a\.//g' > "./gfwlist_wildcards.tmp"
-    cat "./gfwlist_data.tmp" | grep -v "^\*-a\." | awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./gfwlist_wildcards.tmp" - | cat - "./gfwlist_data.tmp" | grep "^\*-a\." | sort | uniq > "./gfwlist_data_filtered.tmp"
+    if [ -s "./gfwlist_wildcards.tmp" ]; then
+        cat "./gfwlist_data.tmp" | grep -v "^\*-a\." | awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./gfwlist_wildcards.tmp" - > "./gfwlist_data_non_wildcard_filtered.tmp"
+        cat "./gfwlist_data_non_wildcard_filtered.tmp" "./gfwlist_data.tmp" | grep "^\*-a\." | sort | uniq > "./gfwlist_data_filtered.tmp"
+    else
+        cp "./gfwlist_data.tmp" "./gfwlist_data_filtered.tmp"
+    fi
     
     # Process lite_cnacc_data.tmp: Extract wildcards and remove matching single domains within lite_cnacc_data
     cat "./lite_cnacc_data.tmp" | grep "^\*-a\." | sed 's/^\*-a\.//g' > "./lite_cnacc_wildcards.tmp"
-    cat "./lite_cnacc_data.tmp" | grep -v "^\*-a\." | awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./lite_cnacc_wildcards.tmp" - | cat - "./lite_cnacc_data.tmp" | grep "^\*-a\." | sort | uniq > "./lite_cnacc_data_filtered.tmp"
+    if [ -s "./lite_cnacc_wildcards.tmp" ]; then
+        cat "./lite_cnacc_data.tmp" | grep -v "^\*-a\." | awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./lite_cnacc_wildcards.tmp" - > "./lite_cnacc_data_non_wildcard_filtered.tmp"
+        cat "./lite_cnacc_data_non_wildcard_filtered.tmp" "./lite_cnacc_data.tmp" | grep "^\*-a\." | sort | uniq > "./lite_cnacc_data_filtered.tmp"
+    else
+        cp "./lite_cnacc_data.tmp" "./lite_cnacc_data_filtered.tmp"
+    fi
     
     # Process lite_gfwlist_data.tmp: Extract wildcards and remove matching single domains within lite_gfwlist_data
     cat "./lite_gfwlist_data.tmp" | grep "^\*-a\." | sed 's/^\*-a\.//g' > "./lite_gfwlist_wildcards.tmp"
-    cat "./lite_gfwlist_data.tmp" | grep -v "^\*-a\." | awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./lite_gfwlist_wildcards.tmp" - | cat - "./lite_gfwlist_data.tmp" | grep "^\*-a\." | sort | uniq > "./lite_gfwlist_data_filtered.tmp"
+    if [ -s "./lite_gfwlist_wildcards.tmp" ]; then
+        cat "./lite_gfwlist_data.tmp" | grep -v "^\*-a\." | awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./lite_gfwlist_wildcards.tmp" - > "./lite_gfwlist_data_non_wildcard_filtered.tmp"
+        cat "./lite_gfwlist_data_non_wildcard_filtered.tmp" "./lite_gfwlist_data.tmp" | grep "^\*-a\." | sort | uniq > "./lite_gfwlist_data_filtered.tmp"
+    else
+        cp "./lite_gfwlist_data.tmp" "./lite_gfwlist_data_filtered.tmp"
+    fi
+    
+    # Debug: Check content of filtered files after wildcard filtering
+    echo "Debug: Content count after wildcard filtering"
+    echo "cnacc_data_filtered.tmp count: $(wc -l < ./cnacc_data_filtered.tmp)"
+    echo "gfwlist_data_filtered.tmp count: $(wc -l < ./gfwlist_data_filtered.tmp)"
+    echo "lite_cnacc_data_filtered.tmp count: $(wc -l < ./lite_cnacc_data_filtered.tmp)"
+    echo "lite_gfwlist_data_filtered.tmp count: $(wc -l < ./lite_gfwlist_data_filtered.tmp)"
     
     # Save final data arrays after filtering out single domains covered by wildcards, prioritize comment filtering
     cnacc_data=($(cat "./cnacc_data_filtered.tmp" | grep -v "^#" | sort | uniq))
     gfwlist_data=($(cat "./gfwlist_data_filtered.tmp" | grep -v "^#" | sort | uniq))
     lite_cnacc_data=($(cat "./lite_cnacc_data_filtered.tmp" | grep -v "^#" | sort | uniq))
     lite_gfwlist_data=($(cat "./lite_gfwlist_data_filtered.tmp" | grep -v "^#" | sort | uniq))
+    
+    # Debug: Check final array sizes
+    echo "Debug: Final array sizes"
+    echo "cnacc_data size: ${#cnacc_data[@]}"
+    echo "gfwlist_data size: ${#gfwlist_data[@]}"
+    echo "lite_cnacc_data size: ${#lite_cnacc_data[@]}"
+    echo "lite_gfwlist_data size: ${#lite_gfwlist_data[@]}"
 }
 
 # Generate Rules
