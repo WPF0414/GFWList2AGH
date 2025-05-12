@@ -141,58 +141,106 @@ function AnalyseData() {
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./cnacc_subtraction.tmp" "./lite_cnacc_added.tmp" > "./lite_cnacc_data.tmp"
     awk 'NR == FNR { tmp[$0] = 1 } NR > FNR { if ( tmp[$0] != 1 ) print }' "./gfwlist_subtraction.tmp" "./lite_gfwlist_added.tmp" > "./lite_gfwlist_data.tmp"
 
-    # New: Remove duplicates covered by wildcard rules (e.g., *-a.domain covers sub.domain)
+    # Optimized: Remove duplicates covered by wildcard rules (e.g., *-a.domain covers sub.domain) using awk
     # Process for cnacc (white list)
     cat "./cnacc_data.tmp" | grep -v "^#" | sort | uniq > "./cnacc_data_no_dup.tmp"
-    > "./cnacc_data_final.tmp"
-    while IFS= read -r line; do
-        if [[ "$line" == *-a.* ]]; then
-            # Extract the domain part after *-a.
-            wildcard_domain=$(echo "$line" | sed 's/.*-a\.//')
-            # Skip adding specific domains covered by this wildcard
-            grep -v "^[a-z0-9-]*\.$wildcard_domain$" "./cnacc_data_no_dup.tmp" > "./cnacc_data_no_dup.tmp.new"
-            mv "./cnacc_data_no_dup.tmp.new" "./cnacc_data_no_dup.tmp"
-        fi
-        echo "$line" >> "./cnacc_data_final.tmp"
-    done < "./cnacc_data_no_dup.tmp"
+    awk '
+    BEGIN { FS = "." }
+    {
+        if ($0 ~ /\*-a\./) {
+            sub(/.*-a\./, "", $0);  # Extract domain after *-a.
+            wildcards[$0] = 1;      # Store wildcard domains
+            print $0;                # Keep wildcard entry
+        } else {
+            full_domain = $0;
+            sub_domain = $0;
+            sub(/^[a-z0-9-]*\./, "", sub_domain);  # Extract domain after first subdomain
+            if (!(sub_domain in wildcards)) {
+                lines[full_domain] = 1;  # Store non-covered domains
+            }
+        }
+    }
+    END {
+        for (line in lines) {
+            print line;
+        }
+    }
+    ' "./cnacc_data_no_dup.tmp" > "./cnacc_data_final.tmp"
 
     # Process for gfwlist (black list)
     cat "./gfwlist_data.tmp" | grep -v "^#" | sort | uniq > "./gfwlist_data_no_dup.tmp"
-    > "./gfwlist_data_final.tmp"
-    while IFS= read -r line; do
-        if [[ "$line" == *-a.* ]]; then
-            # Extract the domain part after *-a.
-            wildcard_domain=$(echo "$line" | sed 's/.*-a\.//')
-            # Skip adding specific domains covered by this wildcard
-            grep -v "^[a-z0-9-]*\.$wildcard_domain$" "./gfwlist_data_no_dup.tmp" > "./gfwlist_data_no_dup.tmp.new"
-            mv "./gfwlist_data_no_dup.tmp.new" "./gfwlist_data_no_dup.tmp"
-        fi
-        echo "$line" >> "./gfwlist_data_final.tmp"
-    done < "./gfwlist_data_no_dup.tmp"
+    awk '
+    BEGIN { FS = "." }
+    {
+        if ($0 ~ /\*-a\./) {
+            sub(/.*-a\./, "", $0);  # Extract domain after *-a.
+            wildcards[$0] = 1;      # Store wildcard domains
+            print $0;                # Keep wildcard entry
+        } else {
+            full_domain = $0;
+            sub_domain = $0;
+            sub(/^[a-z0-9-]*\./, "", sub_domain);  # Extract domain after first subdomain
+            if (!(sub_domain in wildcards)) {
+                lines[full_domain] = 1;  # Store non-covered domains
+            }
+        }
+    }
+    END {
+        for (line in lines) {
+            print line;
+        }
+    }
+    ' "./gfwlist_data_no_dup.tmp" > "./gfwlist_data_final.tmp"
 
     # Process for lite_cnacc (white list)
     cat "./lite_cnacc_data.tmp" | grep -v "^#" | sort | uniq > "./lite_cnacc_data_no_dup.tmp"
-    > "./lite_cnacc_data_final.tmp"
-    while IFS= read -r line; do
-        if [[ "$line" == *-a.* ]]; then
-            wildcard_domain=$(echo "$line" | sed 's/.*-a\.//')
-            grep -v "^[a-z0-9-]*\.$wildcard_domain$" "./lite_cnacc_data_no_dup.tmp" > "./lite_cnacc_data_no_dup.tmp.new"
-            mv "./lite_cnacc_data_no_dup.tmp.new" "./lite_cnacc_data_no_dup.tmp"
-        fi
-        echo "$line" >> "./lite_cnacc_data_final.tmp"
-    done < "./lite_cnacc_data_no_dup.tmp"
+    awk '
+    BEGIN { FS = "." }
+    {
+        if ($0 ~ /\*-a\./) {
+            sub(/.*-a\./, "", $0);  # Extract domain after *-a.
+            wildcards[$0] = 1;      # Store wildcard domains
+            print $0;                # Keep wildcard entry
+        } else {
+            full_domain = $0;
+            sub_domain = $0;
+            sub(/^[a-z0-9-]*\./, "", sub_domain);  # Extract domain after first subdomain
+            if (!(sub_domain in wildcards)) {
+                lines[full_domain] = 1;  # Store non-covered domains
+            }
+        }
+    }
+    END {
+        for (line in lines) {
+            print line;
+        }
+    }
+    ' "./lite_cnacc_data_no_dup.tmp" > "./lite_cnacc_data_final.tmp"
 
     # Process for lite_gfwlist (black list)
     cat "./lite_gfwlist_data.tmp" | grep -v "^#" | sort | uniq > "./lite_gfwlist_data_no_dup.tmp"
-    > "./lite_gfwlist_data_final.tmp"
-    while IFS= read -r line; do
-        if [[ "$line" == *-a.* ]]; then
-            wildcard_domain=$(echo "$line" | sed 's/.*-a\.//')
-            grep -v "^[a-z0-9-]*\.$wildcard_domain$" "./lite_gfwlist_data_no_dup.tmp" > "./lite_gfwlist_data_no_dup.tmp.new"
-            mv "./lite_gfwlist_data_no_dup.tmp.new" "./lite_gfwlist_data_no_dup.tmp"
-        fi
-        echo "$line" >> "./lite_gfwlist_data_final.tmp"
-    done < "./lite_gfwlist_data_no_dup.tmp"
+    awk '
+    BEGIN { FS = "." }
+    {
+        if ($0 ~ /\*-a\./) {
+            sub(/.*-a\./, "", $0);  # Extract domain after *-a.
+            wildcards[$0] = 1;      # Store wildcard domains
+            print $0;                # Keep wildcard entry
+        } else {
+            full_domain = $0;
+            sub_domain = $0;
+            sub(/^[a-z0-9-]*\./, "", sub_domain);  # Extract domain after first subdomain
+            if (!(sub_domain in wildcards)) {
+                lines[full_domain] = 1;  # Store non-covered domains
+            }
+        }
+    }
+    END {
+        for (line in lines) {
+            print line;
+        }
+    }
+    ' "./lite_gfwlist_data_no_dup.tmp" > "./lite_gfwlist_data_final.tmp"
 
     # Save final data arrays, prioritize comment filtering
     cnacc_data=($(cat "./cnacc_data_final.tmp" | grep -v "^#" | sort | uniq))
@@ -200,6 +248,7 @@ function AnalyseData() {
     lite_cnacc_data=($(cat "./lite_cnacc_data_final.tmp" | grep -v "^#" | sort | uniq))
     lite_gfwlist_data=($(cat "./lite_gfwlist_data_final.tmp" | grep -v "^#" | sort | uniq))
 }
+
 
 
 
