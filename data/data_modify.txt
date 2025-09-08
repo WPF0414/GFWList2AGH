@@ -233,4 +233,7 @@
 (@&!)xp.m-team.cc
 (@&!)www.hdkyl.in
 
+# duolingo
+(*%*)duolingo.cn
+
 ## 自定义规则 - 结束
