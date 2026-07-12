@@ -10,7 +10,7 @@
 function GetData() {
     cnacc_domain=(
         "https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/direct-list.txt"
-        "https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/apple-cn.txt"
+#        "https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/apple-cn.txt"
         "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/GoogleFCM/GoogleFCM.list"
         "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/GovCN/GovCN.list"
         "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/China/China.list"
@@ -32,7 +32,7 @@ function GetData() {
     )
     cnacc_trusted=(
         "https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf"
-        "https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/apple.china.conf"
+#        "https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/apple.china.conf"
         "https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/google.china.conf"
     )
     gfwlist_base64=(
