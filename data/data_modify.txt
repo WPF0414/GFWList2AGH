@@ -93,8 +93,8 @@
 # duolingo
 (*%*)duolingo.cn
 
-# siri
-(!%!)guzzoni.smoot.apple.com
+# apple
+(!%!)apple.com
 
 # NTP
 (@%!)0.openwrt.pool.ntp.org
@@ -157,15 +157,6 @@
 (@%!)time3.cloud.tencent.com
 (@%!)time4.cloud.tencent.com
 (@%!)time5.cloud.tencent.com
-(@%!)time.apple.com
-(@%!)time1.apple.com
-(@%!)time2.apple.com
-(@%!)time3.apple.com
-(@%!)time4.apple.com
-(@%!)time5.apple.com
-(@%!)time6.apple.com
-(@%!)time7.apple.com
-(@%!)time.asia.apple.com
 (@%!)time1.google.com
 (@%!)time2.google.com
 (@%!)time3.google.com
