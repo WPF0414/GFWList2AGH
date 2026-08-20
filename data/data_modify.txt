@@ -92,10 +92,9 @@
 
 # duolingo
 (*%*)duolingo.cn
-
 # 喜马拉雅
-(!%*)ximalaya.com
-(!%*)himalaya.com
+(*%*)ximalaya.com
+(*%*)himalaya.com
 
 # siri
 (!%!)guzzoni.smoot.apple.com
